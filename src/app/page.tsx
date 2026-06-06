@@ -71,10 +71,10 @@ function ChatInner() {
     clientTools: {
       getGithubProjects: async (parameters: any) => {
         try {
-          const res = await fetchGithubProjectsAction(parameters);
-          if (res.error) return `Error fetching projects: ${res.error}`;
-          if (res.focusRepo) return `Readme for ${res.focusRepo}:\n${res.readme.substring(0, 500)}`;
-          if (res.repos?.length > 0) {
+          const res = (await fetchGithubProjectsAction(parameters)) as any;
+          if (res?.error) return `Error fetching projects: ${res.error}`;
+          if (res?.focusRepo) return `Readme for ${res.focusRepo}:\n${res.readme?.substring(0, 500)}`;
+          if (res?.repos?.length > 0) {
             const list = res.repos.slice(0, 10).map((r: any) => `${r.name} (${r.language || 'Unknown'}) - ${r.description || 'No description'}`).join('; ');
             return `Found ${res.totalFound} projects. Here are some of them: ${list}. Please read these to the user naturally.`;
           }
@@ -83,8 +83,8 @@ function ChatInner() {
       },
       getAvailability: async (parameters: any) => {
         try {
-          const res = await fetchAvailabilityAction(parameters);
-          if (res.availableSlots) {
+          const res = (await fetchAvailabilityAction(parameters)) as any;
+          if (res?.availableSlots) {
             return `Here are the available time slots in UTC: ${res.availableSlots.join(', ')}. Please read them clearly to the user.`;
           }
           return "No availability found.";
@@ -94,7 +94,7 @@ function ChatInner() {
   });
 
   const toggleVoice = async () => {
-    if (conversation.status === 'connected') {
+    if (String(conversation.status) === "connected") {
       await conversation.endSession();
     } else {
       const agentId = process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID;
@@ -326,7 +326,7 @@ function ChatInner() {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             marginBottom: '0.4rem', position: 'relative',
             boxShadow: '0 4px 20px rgba(233,30,140,0.12)',
-            animation: conversation.status === 'connected' ? 'pulseRing 2s infinite' : 'none',
+            animation: String(conversation.status) === "connected" ? 'pulseRing 2s infinite' : 'none',
           }}>
             <svg viewBox="0 0 40 40" width="40" height="40" fill="none">
               <circle cx="20" cy="20" r="18" fill="#fce4ec" />
@@ -367,7 +367,7 @@ function ChatInner() {
           boxShadow: '0 4px 24px rgba(233,30,140,0.05)',
           overflow: 'hidden',
         }}>
-          {conversation.status === 'connected' ? (
+          {String(conversation.status) === "connected" ? (
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(180deg, #fff, #fdf4f7)' }}>
               <div style={{
                 width: '140px', height: '140px', borderRadius: '50%',
@@ -768,33 +768,33 @@ function ChatInner() {
                 value={inputValue}
                 onChange={e => setInputValue(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(inputValue); } }}
-                placeholder={conversation.status === 'connected' ? "Voice active... (click mic to end)" : "Ask about skills, GitHub repos, or schedule a call..."}
-                disabled={isLoading || conversation.status === 'connected'}
+                placeholder={String(conversation.status) === "connected" ? "Voice active... (click mic to end)" : "Ask about skills, GitHub repos, or schedule a call..."}
+                disabled={isLoading || String(conversation.status) === "connected"}
                 autoComplete="off"
                 style={{
                   flex: 1, background: '#fdf4f7',
                   border: '1px solid rgba(233,30,140,0.18)',
                   borderRadius: '999px', padding: '0.65rem 1.1rem',
                   fontSize: '0.85rem', color: '#1a0a12',
-                  fontFamily: 'inherit', opacity: (isLoading || conversation.status === 'connected') ? 0.6 : 1,
+                  fontFamily: 'inherit', opacity: (isLoading || String(conversation.status) === "connected") ? 0.6 : 1,
                   transition: 'box-shadow 0.15s',
                 }}
               />
               <button
                 type="button"
                 onClick={toggleVoice}
-                title={conversation.status === 'connected' ? "End voice call" : "Start voice call"}
+                title={String(conversation.status) === "connected" ? "End voice call" : "Start voice call"}
                 style={{
                   width: '38px', height: '38px', borderRadius: '50%', flexShrink: 0,
-                  background: conversation.status === 'connected' ? '#ef4444' : '#fce4ec',
-                  border: '1px solid ' + (conversation.status === 'connected' ? '#dc2626' : 'rgba(233,30,140,0.2)'),
-                  color: conversation.status === 'connected' ? '#fff' : '#e91e8c',
+                  background: String(conversation.status) === "connected" ? '#ef4444' : '#fce4ec',
+                  border: '1px solid ' + (String(conversation.status) === "connected" ? '#dc2626' : 'rgba(233,30,140,0.2)'),
+                  color: String(conversation.status) === "connected" ? '#fff' : '#e91e8c',
                   cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
                   transition: 'all 0.2s',
-                  animation: conversation.status === 'connected' ? 'pulseRing 2s infinite' : 'none',
+                  animation: String(conversation.status) === "connected" ? 'pulseRing 2s infinite' : 'none',
                 }}
               >
-                {conversation.status === 'connected' ? (
+                {String(conversation.status) === "connected" ? (
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/></svg>
                 ) : (
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
