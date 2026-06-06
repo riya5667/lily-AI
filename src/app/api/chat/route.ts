@@ -247,7 +247,7 @@ export async function POST(req: Request) {
               }
 
               if (readme) {
-                githubContext = `\nGITHUB PROJECT DATA:\nRepository: ${repo.name}\nURL: ${repo.html_url}\nLanguage: ${repo.language || 'Unknown'}\nDescription: ${repo.description || 'No description'}\nREADME/Details:\n${readme.substring(0, 3000)}\n`;
+                githubContext = `\nGITHUB PROJECT DATA:\nRepository: ${repo.name}\nURL: ${repo.html_url}\nLanguage: ${repo.language || 'Unknown'}\nDescription: ${repo.description || 'No description'}\nREADME:\n${readme.substring(0, 1200)}\n`;
               } else {
                 githubContext = `\nGITHUB PROJECT DATA:\nRepository: ${repo.name}\nURL: ${repo.html_url}\nLanguage: ${repo.language || 'Unknown'}\nDescription: ${repo.description || 'No description'}\nNote: This repo has no README or profile description.\n`;
               }
@@ -260,38 +260,22 @@ export async function POST(req: Request) {
 
     // ── 3. System prompt ─────────────────────────────────────────────────────
     const hasGithubData = githubContext.length > 0;
-    const systemPrompt = `
-      You are Lily's AI representative. Your job is to answer questions about Lily accurately and helpfully.
+    const profileSnippet = CANDIDATE_PROFILE ? CANDIDATE_PROFILE.substring(0, 2000) : '';
+    const systemPrompt = `You are Lily's AI representative. Be warm, concise and conversational. Max 3 short paragraphs per reply.
 
-      ${CANDIDATE_PROFILE ? `
-=== LILY'S FULL PROFILE (use this for questions about her background, experience, skills, projects, internship, etc.) ===
-${CANDIDATE_PROFILE}
-=== END LILY'S PROFILE ===
-      ` : ''}
+${profileSnippet ? `=== LILY'S PROFILE ===\n${profileSnippet}\n=== END ===` : ''}
 
-      ${hasGithubData ? `
-=== GITHUB DATA (use this to answer GitHub-specific project questions) ===
-${githubContext}
-=== END GITHUB DATA ===
-      ` : ''}
+${hasGithubData ? `=== GITHUB PROJECT ===\n${githubContext}\n=== END ===` : ''}
 
-      ${contextText ? `
-=== ADDITIONAL CONTEXT ===
-${contextText}
-=== END ADDITIONAL CONTEXT ===
-      ` : ''}
+${(!hasGithubData && contextText) ? `=== EXTRA CONTEXT ===\n${contextText.substring(0, 600)}\n=== END ===` : ''}
 
-      INSTRUCTIONS:
-      1. ALWAYS use LILY'S FULL PROFILE above to answer questions about her experience, skills, internship, projects, background, etc.
-      2. If GITHUB DATA is present above, USE IT to give a detailed, conversational answer about that specific project. Do NOT just list data — tell a story about the project.
-      3. ONLY call the getGithubProjects tool when the user explicitly asks to SEE or BROWSE all projects as a visual list (e.g. "show me all her projects", "list her repos"). Generic questions like "tell me about her projects" or "what has she built?" should be answered conversationally from LILY'S FULL PROFILE.
-      4. NEVER say "I don't have information" about topics covered in LILY'S FULL PROFILE above.
-      5. Be friendly, warm and conversational — answer like a knowledgeable colleague, not a database dump.
-      6. Always end with: "Confidence: ${confidenceScore}"
-      7. If the user asks about a specific project (e.g. fashion, tashi, etc.), do NOT call getGithubProjects because the README is already injected in the GITHUB DATA context above.
-      8. Use getAvailability and createBooking tools for scheduling interviews only.
-      9. When talking about projects, highlight what makes them impressive — the problem solved, the tech used, and the impact. Be enthusiastic!
-    `;
+RULES:
+- Use profile for experience/skills/background questions.
+- If GITHUB PROJECT is present, tell a story about it: problem, tech, impact. Be enthusiastic!
+- ONLY call getGithubProjects when user explicitly wants to browse/see all repos as cards.
+- NEVER say you lack info about topics in the profile.
+- End every reply with: Confidence: ${confidenceScore}
+- Use getAvailability/createBooking for scheduling only.`;
 
     // ── 4. Stream ────────────────────────────────────────────────────────────
     const modelMessages = await convertToModelMessages(messages ?? []);
@@ -300,6 +284,7 @@ ${contextText}
       system: systemPrompt,
       messages: modelMessages,
       tools: { getAvailability, createBooking, getGithubProjects },
+      maxTokens: 500,
       stopWhen: stepCountIs(3),
       onFinish: async (event) => {
         try {
