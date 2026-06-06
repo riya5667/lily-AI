@@ -89,9 +89,15 @@ function fuzzyMatch(repos: any[], query: string) {
 }
 
 // ── Detect intent: 'list all' vs 'specific project' ─────────────────────────
+// Only trigger the "dump all repos" path when user EXPLICITLY asks for a full list.
+// Questions like "tell me about her projects" or "what has she built?" should
+// be answered conversationally using the profile, NOT by listing every repo.
 function isListAllReposQuery(text: string): boolean {
-  return /\b(show|list|all|every|repos?|repositories|portfolio|projects?)\b/i.test(text) &&
-    !/(about|detail|explain|describe|tell me about|what is)/i.test(text);
+  // Must have an explicit list/show/all trigger word
+  const hasListTrigger = /\b(show all|list all|all (her |my )?(repos?|repositories|projects)|show (her |my )?(repos?|repositories|projects)|view repos|see repos)\b/i.test(text);
+  // AND must NOT be a conversational question about a specific project
+  const isConversational = /(tell me about|explain|describe|what is|what are|how does|talk about|details? (of|about)|more about)/i.test(text);
+  return hasListTrigger && !isConversational;
 }
 
 function detectProjectQuery(text: string): string | null {
@@ -272,14 +278,14 @@ ${contextText}
 
       INSTRUCTIONS:
       1. ALWAYS use LILY'S FULL PROFILE above to answer questions about her experience, skills, internship, projects, background, etc.
-      2. If GITHUB DATA is present above, USE IT to give detailed answers about specific GitHub repositories.
-      3. If the user asks to list/show all repositories, mention the total count and present the full list.
+      2. If GITHUB DATA is present above, USE IT to give a detailed, conversational answer about that specific project. Do NOT just list data — tell a story about the project.
+      3. ONLY call the getGithubProjects tool when the user explicitly asks to SEE or BROWSE all projects as a visual list (e.g. "show me all her projects", "list her repos"). Generic questions like "tell me about her projects" or "what has she built?" should be answered conversationally from LILY'S FULL PROFILE.
       4. NEVER say "I don't have information" about topics covered in LILY'S FULL PROFILE above.
-      5. Be friendly and conversational.
+      5. Be friendly, warm and conversational — answer like a knowledgeable colleague, not a database dump.
       6. Always end with: "Confidence: ${confidenceScore}"
-      7. Use the getGithubProjects tool ONLY when asked to list or show all of Lily's repositories/projects as a visual card display.
-      8. If the user asks about a specific project (e.g. fashion, tashi, etc.), do NOT call getGithubProjects because the README is already injected in the GITHUB DATA context.
-      9. Use getAvailability and createBooking tools for scheduling interviews only.
+      7. If the user asks about a specific project (e.g. fashion, tashi, etc.), do NOT call getGithubProjects because the README is already injected in the GITHUB DATA context above.
+      8. Use getAvailability and createBooking tools for scheduling interviews only.
+      9. When talking about projects, highlight what makes them impressive — the problem solved, the tech used, and the impact. Be enthusiastic!
     `;
 
     // ── 4. Stream ────────────────────────────────────────────────────────────
