@@ -284,7 +284,7 @@ RULES:
       system: systemPrompt,
       messages: modelMessages,
       tools: { getAvailability, createBooking, getGithubProjects },
-      maxTokens: 300,
+      maxOutputTokens: 300,
       stopWhen: stepCountIs(3),
       onFinish: async (event) => {
         try {
