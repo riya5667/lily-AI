@@ -261,7 +261,7 @@ export async function POST(req: Request) {
     // ── 3. System prompt ─────────────────────────────────────────────────────
     const hasGithubData = githubContext.length > 0;
     const profileSnippet = CANDIDATE_PROFILE ? CANDIDATE_PROFILE.substring(0, 2000) : '';
-    const systemPrompt = `You are Lily's AI representative. Be warm, concise and conversational. Max 3 short paragraphs per reply.
+    const systemPrompt = `You are Lily's AI representative. Be warm and conversational. IMPORTANT: Keep every reply to exactly 2 short paragraphs — always write complete sentences, never cut off mid-thought.
 
 ${profileSnippet ? `=== LILY'S PROFILE ===\n${profileSnippet}\n=== END ===` : ''}
 
@@ -284,7 +284,7 @@ RULES:
       system: systemPrompt,
       messages: modelMessages,
       tools: { getAvailability, createBooking, getGithubProjects },
-      maxTokens: 500,
+      maxTokens: 800,
       stopWhen: stepCountIs(3),
       onFinish: async (event) => {
         try {
