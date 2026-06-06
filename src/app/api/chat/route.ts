@@ -224,14 +224,19 @@ export async function POST(req: Request) {
             if (matches.length > 0) {
               const repo = matches[0];
               console.log('[GitHub] fetching README for:', repo.name);
+              // Use JSON endpoint (not .raw) so the Authorization header is preserved
+              // for private repos. GitHub returns base64-encoded content in JSON.
               const readmeRes = await fetch(
                 `https://api.github.com/repos/${GITHUB_USERNAME}/${repo.name}/readme`,
-                { headers: { ...headers, Accept: 'application/vnd.github.raw' } }
+                { headers: { ...headers, Accept: 'application/vnd.github+json' } }
               );
               console.log('[GitHub] README status:', readmeRes.status);
               let readme = '';
               if (readmeRes.ok) {
-                readme = await readmeRes.text();
+                const readmeJson = await readmeRes.json();
+                // GitHub returns content as base64 with line breaks
+                const raw = readmeJson.content?.replace(/\n/g, '') ?? '';
+                readme = Buffer.from(raw, 'base64').toString('utf8');
                 console.log('[GitHub] README length:', readme.length);
               } else {
                 const fallbackInfo = getProjectFromProfile(repo.name);
